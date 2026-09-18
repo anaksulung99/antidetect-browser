@@ -25,7 +25,15 @@
     "exactOptionalPropertyTypes": false,
     "noUncheckedIndexedAccess": false,
   },
-  "include": ["src/**/*.ts", "src/**/*.d.ts", "src/**/*.tsx", "src/**/*.vue"],
+  "include": [
+    "src/**/*.ts",
+    "src/**/*.d.ts",
+    "src/**/*.tsx",
+    "src/**/*.vue",
+    "electron/db/schema.ts",
+    "electron/db/schema.ts",
+    "electron/db/schema.ts",
+  ],
   "exclude": ["dist", "dist-electron", "node_modules"],
   "references": [
     {

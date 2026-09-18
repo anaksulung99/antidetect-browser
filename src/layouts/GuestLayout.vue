@@ -6,13 +6,13 @@
   <main
     class="relative flex min-h-screen w-full flex-col items-center justify-center overflow-auto overflow-x-hidden hero-section"
   >
-    <!-- <div class="absolute top-4 right-4">
+    <div class="absolute top-4 right-4">
       <ThemeToggle />
-    </div> -->
+    </div>
     <div class="mx-auto w-full max-w-md space-y-4">
       <div class="flex flex-col items-center justify-center">
         <img src="/logo.png" alt="Steelheart She's Gone" class="size-10" />
-        <span class="text-2xl font-bold text-white"> Antidetect Crawlee </span>
+        <span class="text-2xl font-bold text-white"> Antidetect Browser </span>
       </div>
       <router-view />
     </div>

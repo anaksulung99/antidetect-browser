@@ -1,9 +1,9 @@
 // @see - https://www.electron.build/configuration/configuration
 {
   "$schema": "https://raw.githubusercontent.com/electron-userland/electron-builder/master/packages/app-builder-lib/scheme.json",
-  "appId": "antidetect-crawlee",
+  "appId": "antidetect-browser",
   "asar": true,
-  "productName": "Antidetect Crawlee",
+  "productName": "Antidetect Browser",
   "directories": {
     "output": "release/${version}"
   },

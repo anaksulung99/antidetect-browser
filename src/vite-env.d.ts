@@ -25,6 +25,16 @@ interface Window {
       reachable: boolean;
       message: string;
     }>;
+    browserProfiles: {
+      list(): Promise<unknown[]>;
+      options(): Promise<{
+        fingerprints: unknown[];
+        proxies: unknown[];
+      }>;
+      create(input: unknown): Promise<{ success: boolean }>;
+      update(input: unknown): Promise<{ success: boolean }>;
+      delete(input: { profileId: string }): Promise<{ success: boolean }>;
+    };
     auth: {
       getCurrentUser(): Promise<{
         id: string;

@@ -1,6 +1,70 @@
 declare global {
   interface Window {
     electronAPI?: ElectronAPI;
+    appRuntime: {
+      getInfo(): Promise<{
+        appMode: "desktop";
+        databaseMode: "neon" | "embedded";
+        browserBinariesPath: string;
+        hasNeonDatabase: boolean;
+        hasCloudAmqp: boolean;
+        hasUpstashRedis: boolean;
+      }>;
+      getDatabaseStatus(): Promise<{
+        mode: "neon" | "embedded";
+        configured: boolean;
+        reachable: boolean;
+        message: string;
+      }>;
+      browserProfiles: {
+        list(): Promise<unknown[]>;
+        options(): Promise<{
+          fingerprints: unknown[];
+          proxies: unknown[];
+        }>;
+        create(input: unknown): Promise<{ success: boolean }>;
+        update(input: unknown): Promise<{ success: boolean }>;
+        delete(input: { profileId: string }): Promise<{ success: boolean }>;
+      };
+      auth: {
+        getCurrentUser(): Promise<{
+          id: string;
+          email: string;
+          name: string;
+          role: "admin" | "user";
+          status: "active" | "inactive" | "invited" | "suspended";
+          lastLoginAt: Date | null;
+        } | null>;
+        login(input: { email: string; password: string }): Promise<{
+          user: {
+            id: string;
+            email: string;
+            name: string;
+            role: "admin" | "user";
+            status: "active" | "inactive" | "invited" | "suspended";
+            lastLoginAt: Date | null;
+          };
+        }>;
+        logout(): Promise<void>;
+        acceptInvitation(input: {
+          token: string;
+          name: string;
+          password: string;
+        }): Promise<{ success: boolean }>;
+        inviteUser(input: { email: string; role: "admin" | "user" }): Promise<{
+          email: string;
+          role: "admin" | "user";
+          token: string;
+          expiresAt: Date;
+        }>;
+        listUsers(): Promise<unknown[]>;
+        setUserStatus(input: {
+          userId: string;
+          status: "active" | "inactive" | "suspended";
+        }): Promise<{ success: boolean }>;
+      };
+      onMainProcessMessage(callback: (message: string) => void): () => void;
+    };
   }
   interface ElectronAPI {
     checkConnection: () => boolean;
@@ -45,3 +109,5 @@ declare global {
     has_more: boolean;
   }
 }
+
+export {};

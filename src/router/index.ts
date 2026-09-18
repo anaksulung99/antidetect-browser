@@ -28,6 +28,22 @@ const routes: RouteRecordRaw[] = [
         component: () => import("../pages/app/Index.vue"),
         meta: { middleware: "auth", title: "Dashboard" },
       },
+      {
+        path: "browser",
+        name: "BrowserProfiles",
+        component: () => import("../pages/app/Browser.vue"),
+        meta: { middleware: "auth", title: "Browser Profiles" },
+      },
+      {
+        path: "admin/users",
+        name: "AdminUsers",
+        component: () => import("../pages/app/admin/Users.vue"),
+        meta: {
+          middleware: "auth",
+          requiresAdmin: true,
+          title: "User Management",
+        },
+      },
     ],
   },
   {

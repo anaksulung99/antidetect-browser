@@ -6,6 +6,7 @@ import { fileURLToPath } from "node:url";
 import { createRuntimeConfig } from "./runtime-config";
 import { ensureBootstrapAdmin } from "./services/auth";
 import { registerAuthIpc } from "./services/auth-ipc";
+import { registerBrowserProfilesIpc } from "./services/browser-profiles-ipc";
 import { getDatabaseStatus } from "./services/database";
 
 createRequire(import.meta.url);
@@ -36,6 +37,7 @@ const runtimeConfig = createRuntimeConfig(process.env.APP_ROOT);
 ipcMain.handle("app-runtime:get-info", () => runtimeConfig);
 ipcMain.handle("database:get-status", () => getDatabaseStatus(runtimeConfig));
 registerAuthIpc(ipcMain, runtimeConfig);
+registerBrowserProfilesIpc(ipcMain, runtimeConfig);
 
 let win: BrowserWindow | null;
 
