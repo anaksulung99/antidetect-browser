@@ -279,6 +279,10 @@ export async function deleteBrowserProfile(
 
   await db
     .update(browserProfiles)
-    .set({ deletedAt: new Date(), status: "inactive", updatedAt: new Date() })
+    .set({
+      deletedAt: new Date(),
+      status: "inactive",
+      updatedAt: new Date(),
+    })
     .where(eq(browserProfiles.id, profileId));
 }

@@ -45,6 +45,59 @@ type ProfileForm = {
   timezone: string;
 };
 
+type BrowserDiagnostics = {
+  profile: { name: string; engine: string };
+  browser: {
+    userAgent: string;
+    platform: string;
+    webdriver: boolean;
+    userAgentData: {
+      brands: unknown[];
+      mobile: boolean;
+      platform: string;
+    } | null;
+    timezone: string;
+    locale: string;
+    viewport: { width: number; height: number };
+    screen: {
+      width: number;
+      height: number;
+      colorDepth: number;
+      pixelDepth: number;
+    };
+    webgl: { vendor: string | null; renderer: string | null };
+    webgl2: { vendor: string | null; renderer: string | null };
+    webrtcCandidates: string[];
+  };
+  headers: {
+    userAgent: string | null;
+    acceptLanguage: string | null;
+    secChUa: string | null;
+    secChUaPlatform: string | null;
+    secChUaMobile: string | null;
+  };
+  network: {
+    ip: string | null;
+    country: string | null;
+    city: string | null;
+    isp: string | null;
+    timezone: string | null;
+    latencyMs: number | null;
+  };
+  comparison: {
+    timezone: { expected: string; actual: string; match: boolean };
+    locale: { expected: string; actual: string; match: boolean };
+    userAgent: { expected: string; actual: string; match: boolean };
+    proxyTimezone: {
+      expected: string | null;
+      actual: string;
+      match: boolean | null;
+    };
+    warnings: string[];
+  };
+  checkedAt: string;
+};
+
 const emptyForm = (): ProfileForm => ({
   name: "",
   engine: "chromium",
@@ -67,6 +120,9 @@ const error = ref<string | null>(null);
 const success = ref<string | null>(null);
 const search = ref("");
 const runtimeIds = ref(new Set<string>());
+const diagnostics = ref<BrowserDiagnostics | null>(null);
+const diagnosticsProfileId = ref<string | null>(null);
+const diagnosticsLoading = ref(false);
 
 const isEditing = computed(() => editingId.value !== null);
 const isRunning = (profile: BrowserProfile) =>
@@ -206,6 +262,22 @@ async function restartProfile(profile: BrowserProfile) {
     await loadData();
   } catch (cause) {
     setError(cause, "Unable to restart browser.");
+  }
+}
+
+async function inspectProfile(profile: BrowserProfile) {
+  clearMessages();
+  diagnosticsLoading.value = true;
+  diagnosticsProfileId.value = profile.id;
+  try {
+    diagnostics.value = (await window.appRuntime.browserRuntime.diagnostics({
+      profileId: profile.id,
+    })) as BrowserDiagnostics;
+  } catch (cause) {
+    setError(cause, "Unable to inspect browser profile.");
+  } finally {
+    diagnosticsLoading.value = false;
+    diagnosticsProfileId.value = null;
   }
 }
 
@@ -455,6 +527,170 @@ onMounted(loadData);
       </CardContent>
     </Card>
 
+    <Card v-if="diagnostics">
+      <CardHeader>
+        <div class="flex items-center justify-between gap-3">
+          <div>
+            <CardTitle>Browser diagnostics</CardTitle>
+            <CardDescription>
+              Pemeriksaan aktual dari tab sementara profile
+              {{ diagnostics.profile.name }}.
+            </CardDescription>
+          </div>
+          <Badge variant="secondary">{{ diagnostics.profile.engine }}</Badge>
+        </div>
+      </CardHeader>
+      <CardContent class="space-y-5 text-sm">
+        <div class="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
+          <div>
+            <div class="text-muted-foreground">Effective User-Agent</div>
+            <div class="break-all">{{ diagnostics.browser.userAgent }}</div>
+          </div>
+          <div>
+            <div class="text-muted-foreground">Platform</div>
+            <div>{{ diagnostics.browser.platform }}</div>
+          </div>
+          <div>
+            <div class="text-muted-foreground">Webdriver</div>
+            <div>{{ diagnostics.browser.webdriver }}</div>
+          </div>
+          <div>
+            <div class="text-muted-foreground">Timezone / Locale</div>
+            <div>
+              {{ diagnostics.browser.timezone }} /
+              {{ diagnostics.browser.locale }}
+            </div>
+          </div>
+        </div>
+        <div class="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
+          <div>
+            <div class="text-muted-foreground">Viewport / Screen</div>
+            <div>
+              {{ diagnostics.browser.viewport.width }}×{{
+                diagnostics.browser.viewport.height
+              }}
+              / {{ diagnostics.browser.screen.width }}×{{
+                diagnostics.browser.screen.height
+              }}
+            </div>
+          </div>
+          <div>
+            <div class="text-muted-foreground">WebGL</div>
+            <div class="wrap-break-word">
+              {{ diagnostics.browser.webgl.vendor }} /
+              {{ diagnostics.browser.webgl.renderer }}
+            </div>
+          </div>
+          <div>
+            <div class="text-muted-foreground">WebGL2</div>
+            <div class="wrap-break-word">
+              {{ diagnostics.browser.webgl2.vendor }} /
+              {{ diagnostics.browser.webgl2.renderer }}
+            </div>
+          </div>
+          <div>
+            <div class="text-muted-foreground">WebRTC candidates</div>
+            <div>{{ diagnostics.browser.webrtcCandidates.length }}</div>
+          </div>
+        </div>
+        <div class="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
+          <div>
+            <div class="text-muted-foreground">Detected IP</div>
+            <div>{{ diagnostics.network.ip ?? "Unavailable" }}</div>
+          </div>
+          <div>
+            <div class="text-muted-foreground">Country / City</div>
+            <div>
+              {{ diagnostics.network.country ?? "-" }} /
+              {{ diagnostics.network.city ?? "-" }}
+            </div>
+          </div>
+          <div>
+            <div class="text-muted-foreground">ISP</div>
+            <div>{{ diagnostics.network.isp ?? "-" }}</div>
+          </div>
+          <div>
+            <div class="text-muted-foreground">Network timezone</div>
+            <div>{{ diagnostics.network.timezone ?? "-" }}</div>
+          </div>
+        </div>
+        <div>
+          <div class="mb-2 font-medium">Client headers</div>
+          <pre class="overflow-x-auto rounded-md bg-muted p-3 text-xs">{{
+            JSON.stringify(diagnostics.headers, null, 2)
+          }}</pre>
+        </div>
+        <div>
+          <div class="mb-2 font-medium">Fingerprint comparison</div>
+          <div class="grid gap-2 md:grid-cols-2">
+            <div
+              :class="
+                diagnostics.comparison.userAgent.match
+                  ? 'text-green-600'
+                  : 'text-destructive'
+              "
+            >
+              User-Agent:
+              {{
+                diagnostics.comparison.userAgent.match ? "match" : "mismatch"
+              }}
+            </div>
+            <div
+              :class="
+                diagnostics.comparison.locale.match
+                  ? 'text-green-600'
+                  : 'text-destructive'
+              "
+            >
+              Locale:
+              {{ diagnostics.comparison.locale.match ? "match" : "mismatch" }}
+            </div>
+            <div
+              :class="
+                diagnostics.comparison.timezone.match
+                  ? 'text-green-600'
+                  : 'text-destructive'
+              "
+            >
+              Timezone:
+              {{ diagnostics.comparison.timezone.match ? "match" : "mismatch" }}
+            </div>
+            <div
+              :class="
+                diagnostics.comparison.proxyTimezone.match !== false
+                  ? 'text-green-600'
+                  : 'text-destructive'
+              "
+            >
+              Proxy timezone:
+              {{
+                diagnostics.comparison.proxyTimezone.expected ?? "not available"
+              }}
+              /
+              {{
+                diagnostics.comparison.proxyTimezone.match === null
+                  ? "not checked"
+                  : diagnostics.comparison.proxyTimezone.match
+                    ? "match"
+                    : "mismatch"
+              }}
+            </div>
+          </div>
+          <ul
+            v-if="diagnostics.comparison.warnings.length"
+            class="mt-3 list-disc space-y-1 pl-5 text-destructive"
+          >
+            <li
+              v-for="warning in diagnostics.comparison.warnings"
+              :key="warning"
+            >
+              {{ warning }}
+            </li>
+          </ul>
+        </div>
+      </CardContent>
+    </Card>
+
     <Card>
       <CardHeader>
         <div
@@ -540,6 +776,18 @@ onMounted(loadData);
                     variant="outline"
                     @click="restartProfile(profile)"
                     >Restart</Button
+                  >
+                  <Button
+                    v-if="isRunning(profile)"
+                    size="sm"
+                    variant="outline"
+                    :disabled="diagnosticsLoading"
+                    @click="inspectProfile(profile)"
+                    >{{
+                      diagnosticsProfileId === profile.id
+                        ? "Checking..."
+                        : "Diagnostics"
+                    }}</Button
                   >
                   <Button
                     size="sm"

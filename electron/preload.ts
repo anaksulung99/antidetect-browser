@@ -21,6 +21,8 @@ contextBridge.exposeInMainWorld("appRuntime", {
     restart: (input: { profileId: string }) =>
       ipcRenderer.invoke("browser-runtime:restart", input),
     statuses: () => ipcRenderer.invoke("browser-runtime:statuses"),
+    diagnostics: (input: { profileId: string }) =>
+      ipcRenderer.invoke("browser-runtime:diagnostics", input),
   },
   proxies: {
     list: () => ipcRenderer.invoke("proxies:list"),

@@ -38,6 +38,7 @@ declare global {
           profileId: string;
         }): Promise<{ profileId: string; status: "running" }>;
         statuses(): Promise<string[]>;
+        diagnostics(input: { profileId: string }): Promise<unknown>;
       };
       proxies: {
         list(): Promise<unknown[]>;
