@@ -5,9 +5,9 @@ import type { RuntimeConfig } from "../runtime-config";
 import { requireActiveUser } from "./auth";
 import { getDatabase } from "./database";
 import {
-    applyAllPresets,
-    fingerprintCapabilities,
-    type FingerprintInput,
+  applyAllPresets,
+  fingerprintCapabilities,
+  type FingerprintInput,
 } from "./fingerprint-presets";
 
 export type FingerprintFormInput = FingerprintInput & {
@@ -65,51 +65,80 @@ export async function getFingerprintCapabilities() {
   return fingerprintCapabilities;
 }
 
+function databaseErrorMessage(error: unknown): string {
+  if (!(error instanceof Error)) return "Unable to create fingerprint.";
+
+  const databaseError = error as Error & { code?: string; constraint?: string };
+  if (
+    databaseError.code === "23505" ||
+    databaseError.constraint === "fingerprints_owner_name_unique"
+  ) {
+    return "A fingerprint with this name already exists. Choose another name.";
+  }
+
+  return error.message || "Unable to create fingerprint.";
+}
+
 export async function createFingerprint(
   config: RuntimeConfig,
-  input: FingerprintFormInput,
+  input: FingerprintFormInput
 ): Promise<void> {
   const user = requireActiveUser();
   const db = getDatabase(config);
+  const name = input.name.trim();
+  const existing = await db
+    .select({ id: fingerprints.id })
+    .from(fingerprints)
+    .where(and(eq(fingerprints.ownerId, user.id), eq(fingerprints.name, name)))
+    .limit(1);
+
+  if (existing[0]) {
+    throw new Error(
+      "A fingerprint with this name already exists. Choose another name."
+    );
+  }
+
   const id = randomUUID();
   const seed = input.seed?.trim() || id;
   const preset = applyAllPresets(input, seed);
   const now = new Date();
 
-  await db.insert(fingerprints).values({
-    id,
-    ownerId: user.id,
-    name: input.name.trim(),
-    status: input.status,
-    deviceType: input.deviceType,
-    osName: input.osName,
-    osVersion: input.osVersion,
-    browserName: input.browserName,
-    browserVersion: input.browserVersion,
-    userAgent: preset.userAgent,
-    locale: input.locale.trim() || "en-US",
-    timezone: input.locale.startsWith("en-GB")
-      ? "Europe/London"
-      : "America/New_York",
-    viewport: preset.viewport,
-    screen: preset.screen,
-    clientHints: preset.clientHints,
-    webgl: preset.webgl,
-    fonts: preset.fonts,
-    media: preset.media,
-    hardware: preset.hardware,
-    seed,
-    presetVersion: "core-1",
-    compatibilityWarnings: preset.compatibilityWarnings,
-    createdAt: now,
-    updatedAt: now,
-  });
+  try {
+    await db.insert(fingerprints).values({
+      id,
+      ownerId: user.id,
+      name,
+      status: input.status,
+      deviceType: input.deviceType,
+      osName: input.osName,
+      osVersion: input.osVersion,
+      browserName: input.browserName,
+      browserVersion: input.browserVersion,
+      userAgent: preset.userAgent,
+      locale: input.locale.trim() || "en-US",
+      timezone: input.timezone.trim(),
+      viewport: preset.viewport,
+      screen: preset.screen,
+      clientHints: preset.clientHints,
+      webgl: preset.webgl,
+      fonts: preset.fonts,
+      media: preset.media,
+      hardware: preset.hardware,
+      seed,
+      presetVersion: "core-1",
+      compatibilityWarnings: preset.compatibilityWarnings,
+      createdAt: now,
+      updatedAt: now,
+    });
+  } catch (error) {
+    throw new Error(databaseErrorMessage(error));
+  }
 }
 
 export async function updateFingerprintStatus(
   config: RuntimeConfig,
   id: string,
-  status: "active" | "inactive",
+  status: "active" | "inactive"
 ): Promise<void> {
   const user = requireActiveUser();
   const db = getDatabase(config);
@@ -128,7 +157,7 @@ export async function updateFingerprintStatus(
 
 export async function deleteFingerprint(
   config: RuntimeConfig,
-  id: string,
+  id: string
 ): Promise<void> {
   const user = requireActiveUser();
   const db = getDatabase(config);
@@ -145,16 +174,13 @@ export async function deleteFingerprint(
     .where(
       and(
         eq(browserProfiles.fingerprintId, id),
-        isNull(browserProfiles.deletedAt),
-      ),
+        isNull(browserProfiles.deletedAt)
+      )
     )
     .limit(1);
   if (usedByProfile[0]) {
     throw new Error("Fingerprint is used by a browser profile.");
   }
 
-  await db
-    .update(fingerprints)
-    .set({ deletedAt: new Date(), status: "inactive", updatedAt: new Date() })
-    .where(eq(fingerprints.id, id));
+  await db.delete(fingerprints).where(eq(fingerprints.id, id));
 }

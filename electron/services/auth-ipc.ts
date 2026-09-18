@@ -1,6 +1,7 @@
 import type { IpcMain } from "electron";
 import { z } from "zod";
 import type { RuntimeConfig } from "../runtime-config";
+import { enforceRateLimit } from "../security/rate-limit";
 import {
   acceptInvitation,
   getActiveUser,
@@ -37,6 +38,11 @@ export function registerAuthIpc(ipcMain: IpcMain, config: RuntimeConfig): void {
 
   ipcMain.handle("auth:login", async (_event, input: unknown) => {
     const values = loginInput.parse(input);
+    enforceRateLimit(
+      `login:${_event.sender.id}:${values.email.toLowerCase()}`,
+      5,
+      60_000
+    );
     return login(config, values.email, values.password);
   });
 
@@ -44,12 +50,14 @@ export function registerAuthIpc(ipcMain: IpcMain, config: RuntimeConfig): void {
 
   ipcMain.handle("auth:accept-invitation", async (_event, input: unknown) => {
     const values = acceptInvitationInput.parse(input);
+    enforceRateLimit(`accept-invitation:${_event.sender.id}`, 10, 60_000);
     await acceptInvitation(config, values.token, values.name, values.password);
     return { success: true };
   });
 
   ipcMain.handle("auth:invite-user", async (_event, input: unknown) => {
     const values = inviteInput.parse(input);
+    enforceRateLimit(`invite:${_event.sender.id}`, 20, 60 * 60_000);
     return inviteUser(config, values.email, values.role);
   });
 

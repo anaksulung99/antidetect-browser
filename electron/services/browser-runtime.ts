@@ -57,6 +57,24 @@ function getBrowserType(
   return { chromium, firefox, webkit }[engine];
 }
 
+function assertFingerprintEngineCompatibility(
+  engine: "chromium" | "firefox" | "webkit",
+  browserName: string
+): void {
+  const expectedEngine =
+    browserName === "Firefox"
+      ? "firefox"
+      : browserName === "Safari"
+        ? "webkit"
+        : "chromium";
+
+  if (engine !== expectedEngine) {
+    throw new Error(
+      `Fingerprint ${browserName} must run with the ${expectedEngine} browser engine, not ${engine}.`
+    );
+  }
+}
+
 function buildProxyOptions(
   proxy: {
     protocol: string;
@@ -203,6 +221,10 @@ export async function startBrowser(
   await setProfileStatus(config, profileId, "starting");
   try {
     const fingerprintData = fingerprint as unknown as FingerprintRuntimeData;
+    assertFingerprintEngineCompatibility(
+      profile.engine,
+      fingerprint.browserName
+    );
     const profileDirectory = getProfileDataDirectory(profile.userDataDirKey);
     await mkdir(profileDirectory, { recursive: true });
     const browserType = getBrowserType(profile.engine);
@@ -302,6 +324,28 @@ export async function getRuntimeStatuses(config: RuntimeConfig) {
     if (user.role === "admin") return true;
     return runtimes.get(profileId)?.profileId === profileId;
   });
+}
+
+export async function reconcileBrowserStatuses(
+  config: RuntimeConfig
+): Promise<void> {
+  const db = getDatabase(config);
+  await db
+    .update(browserProfiles)
+    .set({ status: "stopped", updatedAt: new Date() })
+    .where(
+      // A runtime map is process-local, so these states are stale after restart.
+      // The next explicit start will create a fresh persistent context.
+      eq(browserProfiles.status, "running")
+    );
+  await db
+    .update(browserProfiles)
+    .set({ status: "stopped", updatedAt: new Date() })
+    .where(eq(browserProfiles.status, "starting"));
+  await db
+    .update(browserProfiles)
+    .set({ status: "stopped", updatedAt: new Date() })
+    .where(eq(browserProfiles.status, "stopping"));
 }
 
 export async function stopAllBrowsers(): Promise<void> {

@@ -31,6 +31,26 @@ function resolveBrowserBinariesPath(appRoot: string): string {
   return fs.existsSync(packagedPath) ? packagedPath : developmentPath;
 }
 
+export function validateRuntimeConfig(config: RuntimeConfig): string[] {
+  const warnings: string[] = [];
+  if (config.databaseMode === "neon" && !config.hasNeonDatabase) {
+    warnings.push(
+      "DATABASE_URL is not configured; database-backed features are unavailable."
+    );
+  }
+  if (!fs.existsSync(config.browserBinariesPath)) {
+    warnings.push(
+      `Browser binaries directory was not found: ${config.browserBinariesPath}`
+    );
+  }
+  if (config.databaseMode === "embedded") {
+    warnings.push(
+      "Embedded database mode is not implemented; use DATABASE_MODE=neon."
+    );
+  }
+  return warnings;
+}
+
 export function createRuntimeConfig(appRoot: string): RuntimeConfig {
   return {
     appMode: "desktop",

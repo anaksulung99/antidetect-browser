@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from "vue";
+import { TimezoneList } from "@/utils/timezone";
+import { LocaleList } from "@/utils/locales";
 
 interface CapabilityGroup {
   versions: readonly string[];
@@ -39,6 +41,8 @@ const browserName = ref("Chrome");
 const browserVersion = ref("123");
 const name = ref("");
 const locale = ref("en-US");
+const timezone = ref("America/New_York");
+
 const seed = ref("");
 const status = ref<"active" | "inactive">("active");
 const loading = ref(false);
@@ -139,6 +143,7 @@ async function generateFingerprint() {
       browserName: browserName.value,
       browserVersion: browserVersion.value,
       locale: locale.value,
+      timezone: timezone.value,
       seed: seed.value || undefined,
     });
     success.value = "Fingerprint generated.";
@@ -376,17 +381,56 @@ onMounted(loadData);
             </Select>
           </div>
           <div class="space-y-2">
-            <Label for="fp-locale">Locale</Label
-            ><Input
-              id="fp-locale"
-              v-model="locale"
-              placeholder="en-US"
-              required
-            />
+            <Label for="fp-locale">Locale</Label>
+            <Select id="fp-locale" v-model="locale" required>
+              <SelectTrigger class="w-full">
+                <SelectValue
+                  :placeholder="
+                    LocaleList.find((t) => t.value === locale)?.label ??
+                    'Select locale'
+                  "
+                />
+              </SelectTrigger>
+              <SelectContent class="w-full">
+                <SelectGroup>
+                  <SelectItem
+                    v-for="option in LocaleList"
+                    :key="option.value"
+                    :value="option.value"
+                  >
+                    {{ option.label }}
+                  </SelectItem>
+                </SelectGroup>
+              </SelectContent>
+            </Select>
           </div>
-          <div class="space-y-2 md:col-span-2">
-            <Label for="fp-seed">Seed (optional)</Label
-            ><Input
+          <div class="space-y-2">
+            <Label for="fp-timezone">Timezone</Label>
+            <Select id="fp-timezone" v-model="timezone">
+              <SelectTrigger class="w-full">
+                <SelectValue
+                  :placeholder="
+                    TimezoneList.find((t) => t.id === timezone)?.name ??
+                    'Select timezone'
+                  "
+                />
+              </SelectTrigger>
+              <SelectContent class="w-full">
+                <SelectGroup>
+                  <SelectItem
+                    v-for="option in TimezoneList"
+                    :key="option.id"
+                    :value="option.id"
+                  >
+                    {{ option.name }}
+                  </SelectItem>
+                </SelectGroup>
+              </SelectContent>
+            </Select>
+          </div>
+          <div class="space-y-2">
+            <Label for="fp-seed">Seed (optional)</Label>
+            <Input
               id="fp-seed"
               v-model="seed"
               placeholder="Leave empty to generate a unique seed"

@@ -2,12 +2,12 @@ import type { IpcMain } from "electron";
 import { z } from "zod";
 import type { RuntimeConfig } from "../runtime-config";
 import {
-    createFingerprint,
-    deleteFingerprint,
-    getFingerprint,
-    getFingerprintCapabilities,
-    listFingerprints,
-    updateFingerprintStatus,
+  createFingerprint,
+  deleteFingerprint,
+  getFingerprint,
+  getFingerprintCapabilities,
+  listFingerprints,
+  updateFingerprintStatus,
 } from "./fingerprints";
 
 const fingerprintInput = z.object({
@@ -19,6 +19,7 @@ const fingerprintInput = z.object({
   browserName: z.string().trim().min(1).max(64),
   browserVersion: z.string().trim().min(1).max(32),
   locale: z.string().trim().min(2).max(32),
+  timezone: z.string().trim().min(3).max(80),
   seed: z.string().trim().max(120).optional(),
 });
 
@@ -27,11 +28,11 @@ const statusInput = idInput.extend({ status: z.enum(["active", "inactive"]) });
 
 export function registerFingerprintsIpc(
   ipcMain: IpcMain,
-  config: RuntimeConfig,
+  config: RuntimeConfig
 ): void {
   ipcMain.handle("fingerprints:list", () => listFingerprints(config));
   ipcMain.handle("fingerprints:capabilities", () =>
-    getFingerprintCapabilities(),
+    getFingerprintCapabilities()
   );
   ipcMain.handle("fingerprints:get", async (_event, input: unknown) => {
     const values = idInput.parse(input);

@@ -16,6 +16,9 @@ declare global {
         reachable: boolean;
         message: string;
       }>;
+      dashboard: {
+        analytics(): Promise<unknown>;
+      };
       browserJobs: {
         list(): Promise<unknown[]>;
         create(input: {

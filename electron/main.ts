@@ -3,13 +3,17 @@ import { app, BrowserWindow, ipcMain } from "electron";
 import { createRequire } from "node:module";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { createRuntimeConfig } from "./runtime-config";
+import { createRuntimeConfig, validateRuntimeConfig } from "./runtime-config";
+import { clearExpiredRateLimits } from "./security/rate-limit";
 import { ensureBootstrapAdmin } from "./services/auth";
 import { registerAuthIpc } from "./services/auth-ipc";
 import { recoverQueuedJobs } from "./services/browser-jobs";
 import { registerBrowserJobsIpc } from "./services/browser-jobs-ipc";
 import { registerBrowserProfilesIpc } from "./services/browser-profiles-ipc";
-import { stopAllBrowsers } from "./services/browser-runtime";
+import {
+  reconcileBrowserStatuses,
+  stopAllBrowsers,
+} from "./services/browser-runtime";
 import { registerBrowserRuntimeIpc } from "./services/browser-runtime-ipc";
 import { registerDashboardIpc } from "./services/dashboard-ipc";
 import { getDatabaseStatus } from "./services/database";
@@ -40,6 +44,11 @@ process.env.VITE_PUBLIC = VITE_DEV_SERVER_URL
   : RENDERER_DIST;
 
 const runtimeConfig = createRuntimeConfig(process.env.APP_ROOT);
+for (const warning of validateRuntimeConfig(runtimeConfig)) {
+  console.warn(`[runtime-config] ${warning}`);
+}
+const rateLimitCleanup = setInterval(clearExpiredRateLimits, 60_000);
+rateLimitCleanup.unref();
 
 ipcMain.handle("app-runtime:get-info", () => runtimeConfig);
 ipcMain.handle("database:get-status", () => getDatabaseStatus(runtimeConfig));
@@ -106,6 +115,7 @@ app.on("activate", () => {
 app.whenReady().then(async () => {
   try {
     await ensureBootstrapAdmin(runtimeConfig);
+    await reconcileBrowserStatuses(runtimeConfig);
     await recoverQueuedJobs(runtimeConfig);
   } catch (error) {
     console.error("Startup services initialization failed:", error);

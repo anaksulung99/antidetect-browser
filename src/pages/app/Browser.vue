@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from "vue";
+import { TimezoneList } from "@/utils/timezone";
+import { LocaleList } from "@/utils/locales";
 
 interface FingerprintOption {
   id: string;
@@ -333,20 +335,51 @@ onMounted(loadData);
           </div>
           <div class="space-y-2">
             <Label for="browser-language">Language</Label>
-            <Input
-              id="browser-language"
-              v-model="form.language"
-              placeholder="en-US"
-              required
-            />
+            <Select id="browser-language" v-model="form.language" required>
+              <SelectTrigger class="w-full">
+                <SelectValue
+                  :placeholder="
+                    LocaleList.find((t) => t.value === form.language)?.label ??
+                    'Select Language'
+                  "
+                />
+              </SelectTrigger>
+              <SelectContent class="w-full">
+                <SelectGroup>
+                  <SelectItem
+                    v-for="option in LocaleList"
+                    :key="option.value"
+                    :value="option.value"
+                  >
+                    {{ option.label }}
+                  </SelectItem>
+                </SelectGroup>
+              </SelectContent>
+            </Select>
           </div>
           <div class="space-y-2">
             <Label for="browser-timezone">Timezone</Label>
-            <Input
-              id="browser-timezone"
-              v-model="form.timezone"
-              placeholder="America/New_York"
-            />
+            <Select id="browser-timezone" v-model="form.timezone">
+              <SelectTrigger class="w-full">
+                <SelectValue
+                  :placeholder="
+                    TimezoneList.find((t) => t.id === form.timezone)?.name ??
+                    'Select timezone'
+                  "
+                />
+              </SelectTrigger>
+              <SelectContent class="w-full">
+                <SelectGroup>
+                  <SelectItem
+                    v-for="option in TimezoneList"
+                    :key="option.id"
+                    :value="option.id"
+                  >
+                    {{ option.name }}
+                  </SelectItem>
+                </SelectGroup>
+              </SelectContent>
+            </Select>
           </div>
           <div class="space-y-2">
             <Label for="browser-language-mode">Language source</Label>

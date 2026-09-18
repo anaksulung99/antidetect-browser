@@ -1,14 +1,15 @@
 import type { IpcMain } from "electron";
 import { z } from "zod";
 import type { RuntimeConfig } from "../runtime-config";
+import { enforceRateLimit } from "../security/rate-limit";
 import {
-    bulkCheckProxies,
-    checkProxy,
-    createBulkProxies,
-    createProxy,
-    deleteProxy,
-    listProxies,
-    updateProxy,
+  bulkCheckProxies,
+  checkProxy,
+  createBulkProxies,
+  createProxy,
+  deleteProxy,
+  listProxies,
+  updateProxy,
 } from "./proxies";
 
 const credential = z
@@ -27,11 +28,13 @@ const bulkInput = z.object({
   namePrefix: z.string().trim().max(80).optional(),
 });
 const idInput = z.object({ id: z.string().uuid() });
-const bulkCheckInput = z.object({ ids: z.array(z.string().uuid()).min(1).max(100) });
+const bulkCheckInput = z.object({
+  ids: z.array(z.string().uuid()).min(1).max(100),
+});
 
 export function registerProxiesIpc(
   ipcMain: IpcMain,
-  config: RuntimeConfig,
+  config: RuntimeConfig
 ): void {
   ipcMain.handle("proxies:list", () => listProxies(config));
   ipcMain.handle("proxies:create", async (_event, input: unknown) => {
@@ -39,10 +42,12 @@ export function registerProxiesIpc(
     return { success: true };
   });
   ipcMain.handle("proxies:create-bulk", async (_event, input: unknown) =>
-    createBulkProxies(config, bulkInput.parse(input)),
+    createBulkProxies(config, bulkInput.parse(input))
   );
   ipcMain.handle("proxies:update", async (_event, input: unknown) => {
-    const values = z.object({ id: z.string().uuid(), data: proxyInput }).parse(input);
+    const values = z
+      .object({ id: z.string().uuid(), data: proxyInput })
+      .parse(input);
     await updateProxy(config, values.id, values.data);
     return { success: true };
   });
@@ -53,10 +58,12 @@ export function registerProxiesIpc(
   });
   ipcMain.handle("proxies:check", async (_event, input: unknown) => {
     const values = idInput.parse(input);
+    enforceRateLimit(`proxy-check:${_event.sender.id}`, 10, 60_000);
     return checkProxy(config, values.id);
   });
   ipcMain.handle("proxies:check-bulk", async (_event, input: unknown) => {
     const values = bulkCheckInput.parse(input);
+    enforceRateLimit(`proxy-check-bulk:${_event.sender.id}`, 3, 60_000);
     return bulkCheckProxies(config, values.ids);
   });
 }

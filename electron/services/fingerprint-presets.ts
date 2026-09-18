@@ -7,12 +7,23 @@ export type FingerprintInput = {
   browserName: string;
   browserVersion: string;
   locale: string;
+  timezone: string;
 };
 
 export type FingerprintPreset = {
   userAgent: string;
-  viewport: { width: number; height: number; deviceScaleFactor: number; isMobile: boolean };
-  screen: { width: number; height: number; colorDepth: number; pixelDepth: number };
+  viewport: {
+    width: number;
+    height: number;
+    deviceScaleFactor: number;
+    isMobile: boolean;
+  };
+  screen: {
+    width: number;
+    height: number;
+    colorDepth: number;
+    pixelDepth: number;
+  };
   clientHints: {
     platform: string;
     mobile: boolean;
@@ -76,13 +87,28 @@ function platformLabel(input: FingerprintInput): string {
   return "iOS";
 }
 
-function browserToken(input: FingerprintInput): string {
-  if (input.browserName === "Firefox") return "Firefox";
-  if (input.browserName === "Safari") return "Version/" + input.browserVersion + " Safari";
-  return `${input.browserName}/${input.browserVersion}.0.0.0`;
+function chromiumVersion(version: string): string {
+  const parts = version.split(".").filter(Boolean);
+  return [
+    parts[0] ?? "120",
+    parts[1] ?? "0",
+    parts[2] ?? "0",
+    parts[3] ?? "0",
+  ].join(".");
 }
 
-export function applyCorePreset(input: FingerprintInput): Pick<FingerprintPreset, "userAgent" | "compatibilityWarnings"> {
+function safariVersion(version: string): string {
+  const parts = version.split(".").filter(Boolean);
+  return [parts[0] ?? "17", parts[1] ?? "0", parts[2] ?? "0"].join(".");
+}
+
+function firefoxVersion(version: string): string {
+  return version.split(".").filter(Boolean).slice(0, 2).join(".") || "121";
+}
+
+export function applyCorePreset(
+  input: FingerprintInput
+): Pick<FingerprintPreset, "userAgent" | "compatibilityWarnings"> {
   const warnings: string[] = [];
   const platform = platformLabel(input);
   const mobile = input.deviceType === "mobile";
@@ -94,18 +120,39 @@ export function applyCorePreset(input: FingerprintInput): Pick<FingerprintPreset
     warnings.push("Desktop device should not use Android or iOS.");
   }
   if (input.osName === "ios" && input.browserName !== "Safari") {
-    warnings.push("iOS browser compatibility is limited to Safari-like profiles.");
+    warnings.push(
+      "iOS browser compatibility is limited to Safari-like profiles."
+    );
   }
 
-  const userAgent = mobile
-    ? input.osName === "ios"
-      ? `Mozilla/5.0 (iPhone; CPU iPhone OS ${input.osVersion.replace(/\./g, "_")} like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) ${browserToken(input)}`
-      : `Mozilla/5.0 (Linux; Android ${input.osVersion}; Pixel 7) AppleWebKit/537.36 (KHTML, like Gecko) ${browserToken(input)} Mobile Safari/537.36`
-    : input.osName === "windows"
-      ? `Mozilla/5.0 (Windows NT ${input.osVersion === "11" ? "10.0" : "10.0"}; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) ${browserToken(input)} Safari/537.36`
+  const version = input.browserVersion.trim();
+  const firefox = firefoxVersion(version);
+  const chromium = chromiumVersion(version);
+  const safari = safariVersion(version);
+  const windowsToken = "Windows NT 10.0; Win64; x64";
+  const osToken =
+    input.osName === "windows"
+      ? windowsToken
       : input.osName === "macos"
-        ? `Mozilla/5.0 (Macintosh; Intel Mac OS X ${input.osVersion.replace(/\./g, "_")}) AppleWebKit/605.1.15 (KHTML, like Gecko) ${browserToken(input)}`
-        : `Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) ${browserToken(input)} Safari/537.36`;
+        ? `Macintosh; Intel Mac OS X ${input.osVersion.replace(/\./g, "_")}`
+        : `X11; Linux x86_64`;
+
+  let userAgent: string;
+  if (input.browserName === "Firefox") {
+    userAgent = mobile
+      ? `Mozilla/5.0 (Android ${input.osVersion}; Mobile; rv:${firefox}) Gecko/${firefox} Firefox/${firefox}`
+      : `Mozilla/5.0 (${osToken}; rv:${firefox}) Gecko/20100101 Firefox/${firefox}`;
+  } else if (input.browserName === "Safari") {
+    userAgent = mobile
+      ? `Mozilla/5.0 (iPhone; CPU iPhone OS ${input.osVersion.replace(/\./g, "_")} like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/${safari} Mobile/15E148 Safari/604.1`
+      : `Mozilla/5.0 (${osToken}) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/${safari} Safari/605.1.15`;
+  } else {
+    const browserToken =
+      input.browserName === "Edge" ? `Edg/${chromium}` : `Chrome/${chromium}`;
+    userAgent = mobile
+      ? `Mozilla/5.0 (Linux; Android ${input.osVersion}; Pixel 7) AppleWebKit/537.36 (KHTML, like Gecko) ${browserToken} Mobile Safari/537.36`
+      : `Mozilla/5.0 (${osToken}) AppleWebKit/537.36 (KHTML, like Gecko) ${browserToken} Safari/537.36`;
+  }
 
   return { userAgent, compatibilityWarnings: warnings };
 }
@@ -123,7 +170,10 @@ export function getViewportPreset(input: FingerprintInput, seed: string) {
     { width: 412, height: 915, scale: 2.625 },
   ];
   const selected = (input.deviceType === "mobile" ? mobile : desktop)[
-    seededNumber(seed + ":viewport", input.deviceType === "mobile" ? mobile.length : desktop.length)
+    seededNumber(
+      seed + ":viewport",
+      input.deviceType === "mobile" ? mobile.length : desktop.length
+    )
   ];
   return {
     width: selected.width,
@@ -145,24 +195,39 @@ export function applyClientHintsPreset(input: FingerprintInput) {
 }
 
 export function applyWebglPreset(input: FingerprintInput, seed: string) {
-  const desktopRenderers = ["ANGLE (Intel, Intel(R) UHD Graphics)", "ANGLE (NVIDIA, NVIDIA GeForce GTX)"];
+  const desktopRenderers = [
+    "ANGLE (Intel, Intel(R) UHD Graphics)",
+    "ANGLE (NVIDIA, NVIDIA GeForce GTX)",
+  ];
   const mobileRenderers = ["Apple GPU", "Adreno (TM) 730", "Mali-G78"];
   return {
     vendor: input.osName === "ios" ? "Apple Inc." : "Google Inc. (Intel)",
-    renderer: (input.deviceType === "mobile" ? mobileRenderers : desktopRenderers)[
-      seededNumber(seed + ":webgl", input.deviceType === "mobile" ? mobileRenderers.length : desktopRenderers.length)
+    renderer: (input.deviceType === "mobile"
+      ? mobileRenderers
+      : desktopRenderers)[
+      seededNumber(
+        seed + ":webgl",
+        input.deviceType === "mobile"
+          ? mobileRenderers.length
+          : desktopRenderers.length
+      )
     ],
   };
 }
 
 export function applyFontsPreset(input: FingerprintInput) {
-  if (input.osName === "windows") return ["Arial", "Calibri", "Segoe UI", "Tahoma", "Verdana"];
-  if (input.osName === "macos" || input.osName === "ios") return ["Arial", "Helvetica", "Helvetica Neue", "Menlo", "-apple-system"];
+  if (input.osName === "windows")
+    return ["Arial", "Calibri", "Segoe UI", "Tahoma", "Verdana"];
+  if (input.osName === "macos" || input.osName === "ios")
+    return ["Arial", "Helvetica", "Helvetica Neue", "Menlo", "-apple-system"];
   if (input.osName === "android") return ["Arial", "Roboto", "Noto Sans"];
   return ["Arial", "DejaVu Sans", "Liberation Sans", "Noto Sans"];
 }
 
-export function applyAllPresets(input: FingerprintInput, seed: string): FingerprintPreset {
+export function applyAllPresets(
+  input: FingerprintInput,
+  seed: string
+): FingerprintPreset {
   const core = applyCorePreset(input);
   const viewport = getViewportPreset(input, seed);
   return {
@@ -178,7 +243,8 @@ export function applyAllPresets(input: FingerprintInput, seed: string): Fingerpr
     webgl: applyWebglPreset(input, seed),
     fonts: applyFontsPreset(input),
     media: {
-      prefersColorScheme: seededNumber(seed + ":theme", 2) === 0 ? "light" : "dark",
+      prefersColorScheme:
+        seededNumber(seed + ":theme", 2) === 0 ? "light" : "dark",
       reducedMotion: false,
     },
     hardware: {
