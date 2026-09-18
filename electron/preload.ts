@@ -3,6 +3,31 @@ import { contextBridge, ipcRenderer } from "electron";
 contextBridge.exposeInMainWorld("appRuntime", {
   getInfo: () => ipcRenderer.invoke("app-runtime:get-info"),
   getDatabaseStatus: () => ipcRenderer.invoke("database:get-status"),
+  proxies: {
+    list: () => ipcRenderer.invoke("proxies:list"),
+    create: (input: unknown) => ipcRenderer.invoke("proxies:create", input),
+    createBulk: (input: unknown) =>
+      ipcRenderer.invoke("proxies:create-bulk", input),
+    update: (input: unknown) => ipcRenderer.invoke("proxies:update", input),
+    delete: (input: { id: string }) =>
+      ipcRenderer.invoke("proxies:delete", input),
+    check: (input: { id: string }) =>
+      ipcRenderer.invoke("proxies:check", input),
+    checkBulk: (input: { ids: string[] }) =>
+      ipcRenderer.invoke("proxies:check-bulk", input),
+  },
+  fingerprints: {
+    list: () => ipcRenderer.invoke("fingerprints:list"),
+    capabilities: () => ipcRenderer.invoke("fingerprints:capabilities"),
+    get: (input: { id: string }) =>
+      ipcRenderer.invoke("fingerprints:get", input),
+    create: (input: unknown) =>
+      ipcRenderer.invoke("fingerprints:create", input),
+    setStatus: (input: { id: string; status: "active" | "inactive" }) =>
+      ipcRenderer.invoke("fingerprints:set-status", input),
+    delete: (input: { id: string }) =>
+      ipcRenderer.invoke("fingerprints:delete", input),
+  },
   browserProfiles: {
     list: () => ipcRenderer.invoke("browser-profiles:list"),
     options: () => ipcRenderer.invoke("browser-profiles:options"),

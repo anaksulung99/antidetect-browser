@@ -8,6 +8,8 @@ import { ensureBootstrapAdmin } from "./services/auth";
 import { registerAuthIpc } from "./services/auth-ipc";
 import { registerBrowserProfilesIpc } from "./services/browser-profiles-ipc";
 import { getDatabaseStatus } from "./services/database";
+import { registerFingerprintsIpc } from "./services/fingerprints-ipc";
+import { registerProxiesIpc } from "./services/proxies-ipc";
 
 createRequire(import.meta.url);
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -38,6 +40,8 @@ ipcMain.handle("app-runtime:get-info", () => runtimeConfig);
 ipcMain.handle("database:get-status", () => getDatabaseStatus(runtimeConfig));
 registerAuthIpc(ipcMain, runtimeConfig);
 registerBrowserProfilesIpc(ipcMain, runtimeConfig);
+registerFingerprintsIpc(ipcMain, runtimeConfig);
+registerProxiesIpc(ipcMain, runtimeConfig);
 
 let win: BrowserWindow | null;
 

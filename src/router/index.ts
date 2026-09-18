@@ -35,6 +35,18 @@ const routes: RouteRecordRaw[] = [
         meta: { middleware: "auth", title: "Browser Profiles" },
       },
       {
+        path: "fingerprint",
+        name: "Fingerprints",
+        component: () => import("../pages/app/Fingerprint.vue"),
+        meta: { middleware: "auth", title: "Fingerprints" },
+      },
+      {
+        path: "proxy",
+        name: "Proxies",
+        component: () => import("../pages/app/Proxy.vue"),
+        meta: { middleware: "auth", title: "Proxies" },
+      },
+      {
         path: "admin/users",
         name: "AdminUsers",
         component: () => import("../pages/app/admin/Users.vue"),

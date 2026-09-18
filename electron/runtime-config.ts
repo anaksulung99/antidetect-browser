@@ -56,3 +56,36 @@ export function getBrowserEnginePath(
 
   return path.join(config.browserBinariesPath, engineDirectory);
 }
+
+export function findBrowserExecutable(
+  config: RuntimeConfig,
+  engine: "chromium" | "firefox" | "webkit"
+): string | undefined {
+  const root = getBrowserEnginePath(config, engine);
+  const executableNames =
+    engine === "chromium"
+      ? ["chrome.exe", "chrome", "Chromium"]
+      : engine === "firefox"
+        ? ["firefox.exe", "firefox"]
+        : ["Playwright.exe", "playwright", "MiniBrowser"];
+
+  const queue = [root];
+  while (queue.length > 0) {
+    const current = queue.shift();
+    if (!current) continue;
+    let entries: fs.Dirent[];
+    try {
+      entries = fs.readdirSync(current, { withFileTypes: true });
+    } catch {
+      continue;
+    }
+    for (const entry of entries) {
+      const entryPath = path.join(current, entry.name);
+      if (entry.isFile() && executableNames.includes(entry.name))
+        return entryPath;
+      if (entry.isDirectory() && !entry.name.startsWith("."))
+        queue.push(entryPath);
+    }
+  }
+  return undefined;
+}

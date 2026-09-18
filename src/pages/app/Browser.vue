@@ -236,34 +236,50 @@ onMounted(loadData);
           </div>
           <div class="space-y-2">
             <Label for="browser-engine">Browser engine</Label>
-            <select
-              id="browser-engine"
-              v-model="form.engine"
-              class="form-select"
-            >
-              <option value="chromium">Chromium</option>
-              <option value="firefox">Firefox</option>
-              <option value="webkit">WebKit</option>
-            </select>
+            <Select id="browser-engine" v-model="form.engine">
+              <SelectTrigger class="w-full">
+                <SelectValue
+                  :placeholder="form.engine ? form.engine : 'Select engine'"
+                />
+              </SelectTrigger>
+              <SelectContent class="w-full">
+                <SelectGroup>
+                  <SelectItem value="chromium"> Chromium </SelectItem>
+                  <SelectItem value="firefox"> Firefox </SelectItem>
+                  <SelectItem value="webkit"> WebKit </SelectItem>
+                </SelectGroup>
+              </SelectContent>
+            </Select>
           </div>
           <div class="space-y-2">
             <Label for="browser-fingerprint">Fingerprint</Label>
-            <select
+            <Select
               id="browser-fingerprint"
               v-model="form.fingerprintId"
-              class="form-select"
               required
             >
-              <option value="" disabled>Select fingerprint</option>
-              <option
-                v-for="fingerprint in fingerprints"
-                :key="fingerprint.id"
-                :value="fingerprint.id"
-              >
-                {{ fingerprint.name }} — {{ fingerprint.deviceType }} /
-                {{ fingerprint.browserName }} {{ fingerprint.browserVersion }}
-              </option>
-            </select>
+              <SelectTrigger class="w-full">
+                <SelectValue
+                  :placeholder="
+                    fingerprints.find((f) => f.id === form.fingerprintId)
+                      ?.name ?? 'Select fingerprint'
+                  "
+                />
+              </SelectTrigger>
+              <SelectContent class="w-full">
+                <SelectGroup>
+                  <SelectItem
+                    v-for="fingerprint in fingerprints"
+                    :key="fingerprint.id"
+                    :value="fingerprint.id"
+                  >
+                    {{ fingerprint.name }} — {{ fingerprint.deviceType }} /
+                    {{ fingerprint.browserName }}
+                    {{ fingerprint.browserVersion }}
+                  </SelectItem>
+                </SelectGroup>
+              </SelectContent>
+            </Select>
             <p
               v-if="fingerprints.length === 0"
               class="text-muted-foreground text-xs"
@@ -290,37 +306,53 @@ onMounted(loadData);
           </div>
           <div class="space-y-2">
             <Label for="browser-language-mode">Language source</Label>
-            <select
-              id="browser-language-mode"
-              v-model="form.languageMode"
-              class="form-select"
-            >
-              <option value="custom">Custom</option>
-              <option value="proxy">Proxy metadata</option>
-            </select>
+            <Select id="browser-language-mode" v-model="form.languageMode">
+              <SelectTrigger class="w-full">
+                <SelectValue
+                  :placeholder="
+                    form.languageMode
+                      ? form.languageMode
+                      : 'Select language source'
+                  "
+                />
+              </SelectTrigger>
+              <SelectContent class="w-full">
+                <SelectGroup>
+                  <SelectItem value="custom"> Custom </SelectItem>
+                  <SelectItem value="proxy"> Proxy metadata </SelectItem>
+                </SelectGroup>
+              </SelectContent>
+            </Select>
           </div>
           <div class="space-y-2 md:col-span-2">
             <label class="flex items-center gap-2 text-sm">
               <input v-model="form.proxyEnabled" type="checkbox" />
               Enable proxy
             </label>
-            <select
-              v-if="form.proxyEnabled"
-              v-model="form.proxyId"
-              class="form-select mt-2 max-w-xl"
-              required
-            >
-              <option value="" disabled>Select proxy</option>
-              <option
-                v-for="proxy in proxies"
-                :key="proxy.id"
-                :value="proxy.id"
-              >
-                {{ proxy.name }} — {{ proxy.protocol }}://{{ proxy.host }}:{{
-                  proxy.port
-                }}
-              </option>
-            </select>
+
+            <Select v-if="form.proxyEnabled" v-model="form.proxyId" required>
+              <SelectTrigger class="w-full">
+                <SelectValue
+                  :placeholder="
+                    proxies.find((p) => p.id === form.proxyId)?.name ||
+                    'Select proxy'
+                  "
+                />
+              </SelectTrigger>
+              <SelectContent class="w-full">
+                <SelectGroup>
+                  <SelectItem
+                    v-for="proxy in proxies"
+                    :key="proxy.id"
+                    :value="proxy.id"
+                  >
+                    {{ proxy.name }} — {{ proxy.protocol }}://{{
+                      proxy.host
+                    }}:{{ proxy.port }}
+                  </SelectItem>
+                </SelectGroup>
+              </SelectContent>
+            </Select>
             <p
               v-if="form.proxyEnabled && proxies.length === 0"
               class="text-muted-foreground mt-2 text-xs"

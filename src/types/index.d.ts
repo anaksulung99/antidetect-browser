@@ -16,6 +16,26 @@ declare global {
         reachable: boolean;
         message: string;
       }>;
+      proxies: {
+        list(): Promise<unknown[]>;
+        create(input: unknown): Promise<{ success: boolean }>;
+        createBulk(input: unknown): Promise<{ created: number }>;
+        update(input: unknown): Promise<{ success: boolean }>;
+        delete(input: { id: string }): Promise<{ success: boolean }>;
+        check(input: { id: string }): Promise<unknown>;
+        checkBulk(input: { ids: string[] }): Promise<unknown[]>;
+      };
+      fingerprints: {
+        list(): Promise<unknown[]>;
+        capabilities(): Promise<unknown>;
+        get(input: { id: string }): Promise<unknown>;
+        create(input: unknown): Promise<{ success: boolean }>;
+        setStatus(input: {
+          id: string;
+          status: "active" | "inactive";
+        }): Promise<{ success: boolean }>;
+        delete(input: { id: string }): Promise<{ success: boolean }>;
+      };
       browserProfiles: {
         list(): Promise<unknown[]>;
         options(): Promise<{
