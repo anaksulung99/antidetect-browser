@@ -1,4 +1,7 @@
 <script lang="ts" setup>
+import { toTypedSchema } from "@vee-validate/zod";
+import { useAuthStore } from "@/stores/auth";
+
 const router = useRouter();
 const authStore = useAuthStore();
 

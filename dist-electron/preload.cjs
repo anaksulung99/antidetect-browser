@@ -1,1 +1,0 @@
-"use strict";const e=require("electron");e.contextBridge.exposeInMainWorld("appRuntime",{getInfo:()=>e.ipcRenderer.invoke("app-runtime:get-info"),getDatabaseStatus:()=>e.ipcRenderer.invoke("database:get-status"),onMainProcessMessage:s=>{const n=(t,r)=>{s(r)};return e.ipcRenderer.on("main-process-message",n),()=>e.ipcRenderer.removeListener("main-process-message",n)}});
