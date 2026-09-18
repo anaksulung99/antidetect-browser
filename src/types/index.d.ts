@@ -16,6 +16,26 @@ declare global {
         reachable: boolean;
         message: string;
       }>;
+      browserJobs: {
+        list(): Promise<unknown[]>;
+        create(input: {
+          profileId: string;
+          url: string;
+        }): Promise<{ id: string; backend: "cloudamqp" | "local" }>;
+        cancel(input: { id: string }): Promise<{ success: boolean }>;
+      };
+      browserRuntime: {
+        start(input: {
+          profileId: string;
+        }): Promise<{ profileId: string; status: "running" }>;
+        stop(input: {
+          profileId: string;
+        }): Promise<{ profileId: string; status: "stopped" }>;
+        restart(input: {
+          profileId: string;
+        }): Promise<{ profileId: string; status: "running" }>;
+        statuses(): Promise<string[]>;
+      };
       proxies: {
         list(): Promise<unknown[]>;
         create(input: unknown): Promise<{ success: boolean }>;

@@ -1,11 +1,11 @@
-import { defineConfig, loadEnv } from "vite";
-import type { RollupLog, WarningHandlerWithDefault } from "rollup";
-import path from "node:path";
-import electron from "vite-plugin-electron/simple";
-import vue from "@vitejs/plugin-vue";
 import tailwindcss from "@tailwindcss/vite";
+import vue from "@vitejs/plugin-vue";
+import path from "node:path";
+import type { RollupLog, WarningHandlerWithDefault } from "rollup";
 import AutoImport from "unplugin-auto-import/vite";
 import Components from "unplugin-vue-components/vite";
+import { defineConfig, loadEnv } from "vite";
+import electron from "vite-plugin-electron/simple";
 
 function toPosixPath(value: string) {
   return value.replace(/\\/g, "/");
@@ -55,7 +55,7 @@ function getRendererManualChunk(id: string) {
 
 function handleRollupWarning(
   warning: RollupLog,
-  warn: WarningHandlerWithDefault,
+  warn: WarningHandlerWithDefault
 ) {
   const message = warning.message ?? "";
   const warningId =
@@ -120,7 +120,7 @@ export default defineConfig(({ command, mode }) => {
 
           return html.replace(
             '<meta charset="UTF-8" />',
-            `<meta charset="UTF-8" />\n    <meta http-equiv="Content-Security-Policy" content="${cspContent}" />`,
+            `<meta charset="UTF-8" />\n    <meta http-equiv="Content-Security-Policy" content="${cspContent}" />`
           );
         },
       },
@@ -135,6 +135,9 @@ export default defineConfig(({ command, mode }) => {
                   "playwright",
                   "playwright-core",
                   "playwright-extra",
+                  "crawlee",
+                  "@upstash/redis",
+                  "@cloudamqp/amqp-client",
                   "puppeteer-extra-plugin-stealth",
                   "fingerprint-generator",
                   "fingerprint-injector",
@@ -238,6 +241,8 @@ export default defineConfig(({ command, mode }) => {
           // intact — they only resolve at runtime in the Electron main process.
           "chromium-bidi",
           /^chromium-bidi\//,
+          "linkedom",
+          "css-select",
         ],
         output: {
           manualChunks: (id) => getRendererManualChunk(id),

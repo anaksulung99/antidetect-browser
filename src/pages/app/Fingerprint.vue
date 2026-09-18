@@ -237,8 +237,8 @@ onMounted(loadData);
           @submit.prevent="generateFingerprint"
         >
           <div class="space-y-2">
-            <Label for="fp-name">Name</Label
-            ><Input
+            <Label for="fp-name">Name</Label>
+            <Input
               id="fp-name"
               v-model="name"
               placeholder="Chrome Windows 11"
@@ -246,66 +246,134 @@ onMounted(loadData);
             />
           </div>
           <div class="space-y-2">
-            <Label for="fp-status">Status</Label
-            ><select id="fp-status" v-model="status" class="form-select">
-              <option value="active">Active</option>
-              <option value="inactive">Inactive</option>
-            </select>
+            <Label for="fp-status">Status</Label>
+            <Select id="fp-status" v-model="status">
+              <SelectTrigger class="w-full capitalize">
+                <SelectValue :placeholder="status ? status : 'Select status'" />
+              </SelectTrigger>
+              <SelectContent class="w-full">
+                <SelectGroup>
+                  <SelectItem value="active"> Active </SelectItem>
+                  <SelectItem value="inactive"> Inactive </SelectItem>
+                </SelectGroup>
+              </SelectContent>
+            </Select>
           </div>
           <div class="space-y-2">
-            <Label for="fp-device">Device type</Label
-            ><select id="fp-device" v-model="deviceType" class="form-select">
-              <option value="desktop">Desktop</option>
-              <option value="mobile">Mobile</option>
-            </select>
+            <Label for="fp-device">Device type</Label>
+            <Select id="fp-device" v-model="deviceType">
+              <SelectTrigger class="w-full capitalize">
+                <SelectValue
+                  :placeholder="deviceType ? deviceType : 'Select device type'"
+                />
+              </SelectTrigger>
+              <SelectContent class="w-full">
+                <SelectGroup>
+                  <SelectItem value="desktop">Desktop </SelectItem>
+                  <SelectItem value="mobile">Mobile </SelectItem>
+                </SelectGroup>
+              </SelectContent>
+            </Select>
           </div>
           <div class="space-y-2">
-            <Label for="fp-os">OS</Label
-            ><select id="fp-os" v-model="osName" class="form-select">
-              <option v-for="option in osOptions" :key="option" :value="option">
-                {{ option }}
-              </option>
-            </select>
+            <Label for="fp-os">OS</Label>
+            <Select id="fp-os" v-model="osName">
+              <SelectTrigger class="w-full capitalize">
+                <SelectValue
+                  :placeholder="
+                    osOptions.find(
+                      (o) => o.toLowerCase() === osName.toLowerCase()
+                    ) ?? 'Select OS'
+                  "
+                />
+              </SelectTrigger>
+              <SelectContent class="w-full">
+                <SelectGroup>
+                  <SelectItem
+                    v-for="option in osOptions"
+                    :key="option"
+                    :value="option"
+                    class="capitalize"
+                  >
+                    {{ option }}
+                  </SelectItem>
+                </SelectGroup>
+              </SelectContent>
+            </Select>
           </div>
           <div class="space-y-2">
-            <Label for="fp-os-version">OS version</Label
-            ><select id="fp-os-version" v-model="osVersion" class="form-select">
-              <option
-                v-for="option in osVersions"
-                :key="option"
-                :value="option"
-              >
-                {{ option }}
-              </option>
-            </select>
+            <Label for="fp-os-version">OS version</Label>
+            <Select id="fp-os-version" v-model="osVersion">
+              <SelectTrigger class="w-full capitalize">
+                <SelectValue
+                  :placeholder="
+                    osVersions.find(
+                      (o) => o.toLowerCase() === osVersion.toLowerCase()
+                    ) ?? 'Select OS Version'
+                  "
+                />
+              </SelectTrigger>
+              <SelectContent class="w-full">
+                <SelectGroup>
+                  <SelectItem
+                    v-for="option in osVersions"
+                    :key="option"
+                    :value="option"
+                    class="capitalize"
+                  >
+                    {{ option }}
+                  </SelectItem>
+                </SelectGroup>
+              </SelectContent>
+            </Select>
           </div>
           <div class="space-y-2">
-            <Label for="fp-browser">Browser</Label
-            ><select id="fp-browser" v-model="browserName" class="form-select">
-              <option
-                v-for="option in browserOptions"
-                :key="option"
-                :value="option"
-              >
-                {{ option }}
-              </option>
-            </select>
+            <Label for="fp-browser">Browser</Label>
+            <Select id="fp-browser" v-model="browserName">
+              <SelectTrigger class="w-full capitalize">
+                <SelectValue
+                  :placeholder="
+                    browserOptions.find(
+                      (o) => o.toLowerCase() === browserName.toLowerCase()
+                    ) ?? 'Select Browser'
+                  "
+                />
+              </SelectTrigger>
+              <SelectContent class="w-full">
+                <SelectGroup>
+                  <SelectItem
+                    v-for="option in browserOptions"
+                    :key="option"
+                    :value="option"
+                    class="capitalize"
+                  >
+                    {{ option }}
+                  </SelectItem>
+                </SelectGroup>
+              </SelectContent>
+            </Select>
           </div>
           <div class="space-y-2">
-            <Label for="fp-browser-version">Browser version</Label
-            ><select
-              id="fp-browser-version"
-              v-model="browserVersion"
-              class="form-select"
-            >
-              <option
-                v-for="option in browserVersions"
-                :key="option"
-                :value="option"
-              >
-                {{ option }}
-              </option>
-            </select>
+            <Label for="fp-browser-version">Browser version</Label>
+            <Select id="fp-browser-version" v-model="browserVersion">
+              <SelectTrigger class="w-full capitalize">
+                <SelectValue
+                  :placeholder="browserVersion ?? 'Select Browser Version'"
+                />
+              </SelectTrigger>
+              <SelectContent class="w-full">
+                <SelectGroup>
+                  <SelectItem
+                    v-for="option in browserVersions"
+                    :key="option"
+                    :value="option"
+                    class="capitalize"
+                  >
+                    {{ option }}
+                  </SelectItem>
+                </SelectGroup>
+              </SelectContent>
+            </Select>
           </div>
           <div class="space-y-2">
             <Label for="fp-locale">Locale</Label

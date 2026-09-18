@@ -6,9 +6,12 @@ import { fileURLToPath } from "node:url";
 import { createRuntimeConfig } from "./runtime-config";
 import { ensureBootstrapAdmin } from "./services/auth";
 import { registerAuthIpc } from "./services/auth-ipc";
+import { recoverQueuedJobs } from "./services/browser-jobs";
+import { registerBrowserJobsIpc } from "./services/browser-jobs-ipc";
 import { registerBrowserProfilesIpc } from "./services/browser-profiles-ipc";
 import { stopAllBrowsers } from "./services/browser-runtime";
 import { registerBrowserRuntimeIpc } from "./services/browser-runtime-ipc";
+import { registerDashboardIpc } from "./services/dashboard-ipc";
 import { getDatabaseStatus } from "./services/database";
 import { registerFingerprintsIpc } from "./services/fingerprints-ipc";
 import { registerProxiesIpc } from "./services/proxies-ipc";
@@ -45,6 +48,8 @@ registerBrowserProfilesIpc(ipcMain, runtimeConfig);
 registerFingerprintsIpc(ipcMain, runtimeConfig);
 registerProxiesIpc(ipcMain, runtimeConfig);
 registerBrowserRuntimeIpc(ipcMain, runtimeConfig);
+registerBrowserJobsIpc(ipcMain, runtimeConfig);
+registerDashboardIpc(ipcMain, runtimeConfig);
 
 let win: BrowserWindow | null;
 
@@ -101,8 +106,9 @@ app.on("activate", () => {
 app.whenReady().then(async () => {
   try {
     await ensureBootstrapAdmin(runtimeConfig);
+    await recoverQueuedJobs(runtimeConfig);
   } catch (error) {
-    console.error("Bootstrap admin setup failed:", error);
+    console.error("Startup services initialization failed:", error);
   }
   createWindow();
 });

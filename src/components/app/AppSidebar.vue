@@ -6,6 +6,7 @@ import {
   HatGlasses,
   LayoutDashboard,
   UserCog,
+  ListChecks,
 } from "@lucide/vue";
 import { h, ref } from "vue";
 import NavUser from "@/components/app/NavUser.vue";
@@ -54,6 +55,13 @@ const navMain = [
     title: "Proxy",
     url: "/app/proxy",
     icon: ShieldKeyhole,
+    isActive: false,
+    adminOnly: false,
+  },
+  {
+    title: "Job Queue",
+    url: "/app/jobs",
+    icon: ListChecks,
     isActive: false,
     adminOnly: false,
   },

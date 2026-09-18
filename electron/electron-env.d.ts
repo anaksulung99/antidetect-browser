@@ -37,6 +37,17 @@ interface Window {
       reachable: boolean;
       message: string;
     }>;
+    dashboard: {
+      analytics(): Promise<unknown>;
+    };
+    browserJobs: {
+      list(): Promise<unknown[]>;
+      create(input: {
+        profileId: string;
+        url: string;
+      }): Promise<{ id: string; backend: "cloudamqp" | "local" }>;
+      cancel(input: { id: string }): Promise<{ success: boolean }>;
+    };
     browserRuntime: {
       start(input: {
         profileId: string;

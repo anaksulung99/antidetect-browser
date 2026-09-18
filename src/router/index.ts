@@ -47,6 +47,12 @@ const routes: RouteRecordRaw[] = [
         meta: { middleware: "auth", title: "Proxies" },
       },
       {
+        path: "jobs",
+        name: "BrowserJobs",
+        component: () => import("../pages/app/Jobs.vue"),
+        meta: { middleware: "auth", title: "Job Queue" },
+      },
+      {
         path: "admin/users",
         name: "AdminUsers",
         component: () => import("../pages/app/admin/Users.vue"),

@@ -66,6 +66,13 @@ export const browserProfileStatusEnum = pgEnum("browser_profile_status", [
   "error",
 ]);
 export const languageModeEnum = pgEnum("language_mode", ["proxy", "custom"]);
+export const browserJobStatusEnum = pgEnum("browser_job_status", [
+  "queued",
+  "running",
+  "succeeded",
+  "failed",
+  "cancelled",
+]);
 
 export const users = pgTable(
   "users",
@@ -273,6 +280,39 @@ export const browserEvents = pgTable(
       table.createdAt
     ),
     index("browser_events_actor_idx").on(table.actorId),
+  ]
+);
+
+export const browserJobs = pgTable(
+  "browser_jobs",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    ownerId: uuid("owner_id")
+      .notNull()
+      .references(() => users.id),
+    browserProfileId: uuid("browser_profile_id")
+      .notNull()
+      .references(() => browserProfiles.id),
+    url: text("url").notNull(),
+    status: browserJobStatusEnum("status").default("queued").notNull(),
+    attempts: integer("attempts").default(0).notNull(),
+    maxAttempts: integer("max_attempts").default(3).notNull(),
+    result: jsonb("result"),
+    error: text("error"),
+    queuedAt: timestamp("queued_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    startedAt: timestamp("started_at", { withTimezone: true }),
+    finishedAt: timestamp("finished_at", { withTimezone: true }),
+    ...timestamps,
+  },
+  (table) => [
+    index("browser_jobs_owner_idx").on(table.ownerId, table.createdAt),
+    index("browser_jobs_profile_idx").on(
+      table.browserProfileId,
+      table.createdAt
+    ),
+    index("browser_jobs_status_idx").on(table.status, table.createdAt),
   ]
 );
 

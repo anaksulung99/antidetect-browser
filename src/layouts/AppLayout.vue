@@ -38,7 +38,7 @@ const currentTitle = computed(() => route.meta.title || "Antidetect Browser");
         />
         <Breadcrumb>
           <BreadcrumbList>
-            <BreadcrumbItem>
+            <BreadcrumbItem class="text-neutral-900 dark:text-neutral-50">
               <BreadcrumbLink href="#"> {{ currentTitle }} </BreadcrumbLink>
             </BreadcrumbItem>
           </BreadcrumbList>
