@@ -64,8 +64,12 @@ const saving = ref(false);
 const error = ref<string | null>(null);
 const success = ref<string | null>(null);
 const search = ref("");
+const runtimeIds = ref(new Set<string>());
 
 const isEditing = computed(() => editingId.value !== null);
+const isRunning = (profile: BrowserProfile) =>
+  runtimeIds.value.has(profile.id) || profile.status === "running";
+
 const filteredProfiles = computed(() => {
   const query = search.value.trim().toLowerCase();
   if (!query) return profiles.value;
@@ -81,6 +85,11 @@ function resetForm() {
   editingId.value = null;
 }
 
+function clearMessages() {
+  error.value = null;
+  success.value = null;
+}
+
 function setError(cause: unknown, fallback: string) {
   error.value = cause instanceof Error ? cause.message : fallback;
 }
@@ -89,11 +98,13 @@ async function loadData() {
   loading.value = true;
   error.value = null;
   try {
-    const [profileResult, optionResult] = await Promise.all([
+    const [profileResult, optionResult, runtimeResult] = await Promise.all([
       window.appRuntime.browserProfiles.list(),
       window.appRuntime.browserProfiles.options(),
+      window.appRuntime.browserRuntime.statuses(),
     ]);
     profiles.value = profileResult as BrowserProfile[];
+    runtimeIds.value = new Set(runtimeResult);
     const options = optionResult as {
       fingerprints: FingerprintOption[];
       proxies: ProxyOption[];
@@ -160,6 +171,39 @@ async function saveProfile() {
     setError(cause, "Unable to save browser profile.");
   } finally {
     saving.value = false;
+  }
+}
+
+async function startProfile(profile: BrowserProfile) {
+  clearMessages();
+  try {
+    await window.appRuntime.browserRuntime.start({ profileId: profile.id });
+    success.value = "Browser started.";
+    await loadData();
+  } catch (cause) {
+    setError(cause, "Unable to start browser.");
+  }
+}
+
+async function stopProfile(profile: BrowserProfile) {
+  clearMessages();
+  try {
+    await window.appRuntime.browserRuntime.stop({ profileId: profile.id });
+    success.value = "Browser stopped.";
+    await loadData();
+  } catch (cause) {
+    setError(cause, "Unable to stop browser.");
+  }
+}
+
+async function restartProfile(profile: BrowserProfile) {
+  clearMessages();
+  try {
+    await window.appRuntime.browserRuntime.restart({ profileId: profile.id });
+    success.value = "Browser restarted.";
+    await loadData();
+  } catch (cause) {
+    setError(cause, "Unable to restart browser.");
   }
 }
 
@@ -436,23 +480,45 @@ onMounted(loadData);
                     ? (profile.proxyName ?? "Unavailable")
                     : "Disabled"
                 }}</TableCell>
-                <TableCell
-                  ><Badge variant="secondary">{{
-                    profile.status
-                  }}</Badge></TableCell
-                >
+                <TableCell>
+                  <Badge
+                    :variant="isRunning(profile) ? 'default' : 'secondary'"
+                  >
+                    {{ isRunning(profile) ? "running" : profile.status }}
+                  </Badge>
+                </TableCell>
                 <TableCell class="space-x-2 text-right">
+                  <Button
+                    v-if="!isRunning(profile)"
+                    size="sm"
+                    @click="startProfile(profile)"
+                    >Start</Button
+                  >
+                  <Button
+                    v-else
+                    size="sm"
+                    variant="outline"
+                    @click="stopProfile(profile)"
+                    >Stop</Button
+                  >
+                  <Button
+                    v-if="isRunning(profile)"
+                    size="sm"
+                    variant="outline"
+                    @click="restartProfile(profile)"
+                    >Restart</Button
+                  >
                   <Button
                     size="sm"
                     variant="outline"
-                    :disabled="profile.status === 'running'"
+                    :disabled="isRunning(profile)"
                     @click="editProfile(profile)"
                     >Edit</Button
                   >
                   <Button
                     size="sm"
                     variant="destructive"
-                    :disabled="profile.status === 'running'"
+                    :disabled="isRunning(profile)"
                     @click="removeProfile(profile)"
                     >Delete</Button
                   >

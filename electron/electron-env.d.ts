@@ -37,6 +37,18 @@ interface Window {
       reachable: boolean;
       message: string;
     }>;
+    browserRuntime: {
+      start(input: {
+        profileId: string;
+      }): Promise<{ profileId: string; status: "running" }>;
+      stop(input: {
+        profileId: string;
+      }): Promise<{ profileId: string; status: "stopped" }>;
+      restart(input: {
+        profileId: string;
+      }): Promise<{ profileId: string; status: "running" }>;
+      statuses(): Promise<string[]>;
+    };
     proxies: {
       list(): Promise<unknown[]>;
       create(input: unknown): Promise<{ success: boolean }>;

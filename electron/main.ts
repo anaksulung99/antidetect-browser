@@ -7,6 +7,8 @@ import { createRuntimeConfig } from "./runtime-config";
 import { ensureBootstrapAdmin } from "./services/auth";
 import { registerAuthIpc } from "./services/auth-ipc";
 import { registerBrowserProfilesIpc } from "./services/browser-profiles-ipc";
+import { stopAllBrowsers } from "./services/browser-runtime";
+import { registerBrowserRuntimeIpc } from "./services/browser-runtime-ipc";
 import { getDatabaseStatus } from "./services/database";
 import { registerFingerprintsIpc } from "./services/fingerprints-ipc";
 import { registerProxiesIpc } from "./services/proxies-ipc";
@@ -42,6 +44,7 @@ registerAuthIpc(ipcMain, runtimeConfig);
 registerBrowserProfilesIpc(ipcMain, runtimeConfig);
 registerFingerprintsIpc(ipcMain, runtimeConfig);
 registerProxiesIpc(ipcMain, runtimeConfig);
+registerBrowserRuntimeIpc(ipcMain, runtimeConfig);
 
 let win: BrowserWindow | null;
 
@@ -72,6 +75,14 @@ function createWindow() {
 // Quit when all windows are closed, except on macOS. There, it's common
 // for applications and their menu bar to stay active until the user quits
 // explicitly with Cmd + Q.
+let isQuitting = false;
+app.on("before-quit", (event) => {
+  if (isQuitting) return;
+  event.preventDefault();
+  isQuitting = true;
+  void stopAllBrowsers().finally(() => app.quit());
+});
+
 app.on("window-all-closed", () => {
   if (process.platform !== "darwin") {
     app.quit();

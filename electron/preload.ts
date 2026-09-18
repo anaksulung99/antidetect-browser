@@ -3,6 +3,15 @@ import { contextBridge, ipcRenderer } from "electron";
 contextBridge.exposeInMainWorld("appRuntime", {
   getInfo: () => ipcRenderer.invoke("app-runtime:get-info"),
   getDatabaseStatus: () => ipcRenderer.invoke("database:get-status"),
+  browserRuntime: {
+    start: (input: { profileId: string }) =>
+      ipcRenderer.invoke("browser-runtime:start", input),
+    stop: (input: { profileId: string }) =>
+      ipcRenderer.invoke("browser-runtime:stop", input),
+    restart: (input: { profileId: string }) =>
+      ipcRenderer.invoke("browser-runtime:restart", input),
+    statuses: () => ipcRenderer.invoke("browser-runtime:statuses"),
+  },
   proxies: {
     list: () => ipcRenderer.invoke("proxies:list"),
     create: (input: unknown) => ipcRenderer.invoke("proxies:create", input),
