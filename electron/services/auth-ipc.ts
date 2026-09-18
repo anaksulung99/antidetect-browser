@@ -2,12 +2,13 @@ import type { IpcMain } from "electron";
 import { z } from "zod";
 import type { RuntimeConfig } from "../runtime-config";
 import {
-    getActiveUser,
-    inviteUser,
-    listUsers,
-    login,
-    logout,
-    setUserStatus,
+  acceptInvitation,
+  getActiveUser,
+  inviteUser,
+  listUsers,
+  login,
+  logout,
+  setUserStatus,
 } from "./auth";
 
 const loginInput = z.object({
@@ -25,10 +26,13 @@ const userStatusInput = z.object({
   status: z.enum(["active", "inactive", "suspended"]),
 });
 
-export function registerAuthIpc(
-  ipcMain: IpcMain,
-  config: RuntimeConfig,
-): void {
+const acceptInvitationInput = z.object({
+  token: z.string().min(16),
+  name: z.string().trim().min(1).max(120),
+  password: z.string().min(8),
+});
+
+export function registerAuthIpc(ipcMain: IpcMain, config: RuntimeConfig): void {
   ipcMain.handle("auth:get-current-user", () => getActiveUser());
 
   ipcMain.handle("auth:login", async (_event, input: unknown) => {
@@ -37,6 +41,12 @@ export function registerAuthIpc(
   });
 
   ipcMain.handle("auth:logout", () => logout(config));
+
+  ipcMain.handle("auth:accept-invitation", async (_event, input: unknown) => {
+    const values = acceptInvitationInput.parse(input);
+    await acceptInvitation(config, values.token, values.name, values.password);
+    return { success: true };
+  });
 
   ipcMain.handle("auth:invite-user", async (_event, input: unknown) => {
     const values = inviteInput.parse(input);

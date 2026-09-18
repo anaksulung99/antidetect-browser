@@ -1,6 +1,6 @@
 import { neon } from "@neondatabase/serverless";
 import { drizzle } from "drizzle-orm/neon-http";
-import * as schema from "../../src/lib/db/schema";
+import * as schema from "../db/schema";
 import type { RuntimeConfig } from "../runtime-config";
 
 export type AppDatabase = ReturnType<typeof createDatabase>;
@@ -22,7 +22,7 @@ let database: AppDatabase | undefined;
 export function getDatabase(config: RuntimeConfig): AppDatabase {
   if (config.databaseMode === "embedded") {
     throw new Error(
-      "Embedded database mode is not implemented yet. Use DATABASE_MODE=neon.",
+      "Embedded database mode is not implemented yet. Use DATABASE_MODE=neon."
     );
   }
 
@@ -36,7 +36,7 @@ export function getDatabase(config: RuntimeConfig): AppDatabase {
 }
 
 export async function getDatabaseStatus(
-  config: RuntimeConfig,
+  config: RuntimeConfig
 ): Promise<DatabaseStatus> {
   if (config.databaseMode === "embedded") {
     return {
@@ -72,7 +72,9 @@ export async function getDatabaseStatus(
       configured: true,
       reachable: false,
       message:
-        error instanceof Error ? error.message : "Database health check failed.",
+        error instanceof Error
+          ? error.message
+          : "Database health check failed.",
     };
   }
 }

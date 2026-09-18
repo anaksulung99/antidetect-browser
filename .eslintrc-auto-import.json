@@ -2,6 +2,9 @@
   "globals": {
     "AlertOptions": true,
     "AlertType": true,
+    "AuthRole": true,
+    "AuthStatus": true,
+    "AuthUser": true,
     "BidiConnection": true,
     "BidiMapper": true,
     "BidiServerLogger": true,
@@ -168,6 +171,7 @@
     "useAsyncQueue": true,
     "useAsyncState": true,
     "useAttrs": true,
+    "useAuthStore": true,
     "useBase64": true,
     "useBattery": true,
     "useBluetooth": true,

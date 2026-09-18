@@ -45,6 +45,11 @@ interface Window {
         };
       }>;
       logout(): Promise<void>;
+      acceptInvitation(input: {
+        token: string;
+        name: string;
+        password: string;
+      }): Promise<{ success: boolean }>;
       inviteUser(input: { email: string; role: "admin" | "user" }): Promise<{
         email: string;
         role: "admin" | "user";

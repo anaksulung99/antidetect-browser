@@ -8,6 +8,11 @@ contextBridge.exposeInMainWorld("appRuntime", {
     login: (input: { email: string; password: string }) =>
       ipcRenderer.invoke("auth:login", input),
     logout: () => ipcRenderer.invoke("auth:logout"),
+    acceptInvitation: (input: {
+      token: string;
+      name: string;
+      password: string;
+    }) => ipcRenderer.invoke("auth:accept-invitation", input),
     inviteUser: (input: { email: string; role: "admin" | "user" }) =>
       ipcRenderer.invoke("auth:invite-user", input),
     listUsers: () => ipcRenderer.invoke("auth:list-users"),

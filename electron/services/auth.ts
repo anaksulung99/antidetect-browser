@@ -1,4 +1,4 @@
-import { and, asc, eq, isNull } from "drizzle-orm";
+import { and, asc, eq, gt, isNull } from "drizzle-orm";
 import {
   createHash,
   randomBytes,
@@ -6,12 +6,7 @@ import {
   timingSafeEqual,
 } from "node:crypto";
 import { promisify } from "node:util";
-import {
-  invitations,
-  sessions,
-  users,
-  type User,
-} from "../../src/lib/db/schema";
+import { invitations, sessions, users, type User } from "../db/schema";
 import type { RuntimeConfig } from "../runtime-config";
 import { getDatabase } from "./database";
 
@@ -35,7 +30,8 @@ export interface InvitationResult {
   expiresAt: Date;
 }
 
-let activeSession: { tokenHash: string; user: SafeUser } | undefined;
+let activeSession:
+  { tokenHash: string; user: SafeUser; expiresAt: number } | undefined;
 
 function toSafeUser(user: User): SafeUser {
   return {
@@ -91,15 +87,21 @@ function assertAdmin(user: SafeUser | undefined): asserts user is SafeUser {
 }
 
 export function getActiveUser(): SafeUser | null {
-  return activeSession?.user ?? null;
+  if (!activeSession) return null;
+  if (Date.now() >= activeSession.expiresAt) {
+    activeSession = undefined;
+    return null;
+  }
+  return activeSession.user;
 }
 
 export function requireActiveUser(): SafeUser {
-  if (!activeSession || activeSession.user.status !== "active") {
+  const user = getActiveUser();
+  if (!user || user.status !== "active") {
     throw new Error("Authentication is required.");
   }
 
-  return activeSession.user;
+  return user;
 }
 
 export async function ensureBootstrapAdmin(
@@ -172,7 +174,11 @@ export async function login(
   });
 
   const safeUser = toSafeUser({ ...user, lastLoginAt: now });
-  activeSession = { tokenHash, user: safeUser };
+  activeSession = {
+    tokenHash,
+    user: safeUser,
+    expiresAt: expiresAt.getTime(),
+  };
   return { user: safeUser };
 }
 
@@ -224,6 +230,55 @@ export async function inviteUser(
   });
 
   return { email: normalizedEmail, role, token, expiresAt };
+}
+
+export async function acceptInvitation(
+  config: RuntimeConfig,
+  token: string,
+  name: string,
+  password: string
+): Promise<void> {
+  assertPassword(password);
+  const db = getDatabase(config);
+  const now = new Date();
+  const result = await db
+    .select()
+    .from(invitations)
+    .where(
+      and(
+        eq(invitations.tokenHash, hashToken(token)),
+        gt(invitations.expiresAt, now),
+        isNull(invitations.acceptedAt)
+      )
+    )
+    .limit(1);
+  const invitation = result[0];
+  if (!invitation) {
+    throw new Error("Invitation is invalid or expired.");
+  }
+
+  const invitedUser = await db
+    .select()
+    .from(users)
+    .where(eq(users.email, invitation.email))
+    .limit(1);
+  if (!invitedUser[0] || invitedUser[0].status !== "invited") {
+    throw new Error("The invited account is no longer available.");
+  }
+
+  await db
+    .update(users)
+    .set({
+      name: name.trim() || invitedUser[0].name,
+      passwordHash: await hashPassword(password),
+      status: "active",
+      updatedAt: now,
+    })
+    .where(eq(users.id, invitedUser[0].id));
+  await db
+    .update(invitations)
+    .set({ acceptedAt: now, updatedAt: now })
+    .where(eq(invitations.id, invitation.id));
 }
 
 export async function listUsers(config: RuntimeConfig): Promise<SafeUser[]> {

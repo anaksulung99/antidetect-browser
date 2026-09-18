@@ -3,6 +3,7 @@ import type { SidebarProps } from "@/components/ui/sidebar";
 import { Globe, ShieldKeyhole, HatGlasses, Inbox } from "@lucide/vue";
 import { h, ref } from "vue";
 import NavUser from "@/components/app/NavUser.vue";
+import { useAuthStore } from "@/stores/auth";
 import {
   Sidebar,
   SidebarContent,
@@ -47,6 +48,7 @@ const navMain = [
   },
 ];
 const activeItem = ref(navMain[0]!);
+const authStore = useAuthStore();
 const { setOpen } = useSidebar();
 </script>
 
@@ -106,7 +108,14 @@ const { setOpen } = useSidebar();
         </SidebarGroup>
       </SidebarContent>
       <SidebarFooter>
-        <!-- <NavUser :user="user" /> -->
+        <NavUser
+          v-if="authStore.user"
+          :user="{
+            name: authStore.user.name,
+            email: authStore.user.email,
+            avatar: '',
+          }"
+        />
       </SidebarFooter>
     </Sidebar>
   </Sidebar>
