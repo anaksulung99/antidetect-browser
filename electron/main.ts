@@ -1,7 +1,12 @@
-import { app, BrowserWindow } from "electron";
+import "dotenv/config";
+import { app, BrowserWindow, ipcMain } from "electron";
 import { createRequire } from "node:module";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { createRuntimeConfig } from "./runtime-config";
+import { ensureBootstrapAdmin } from "./services/auth";
+import { registerAuthIpc } from "./services/auth-ipc";
+import { getDatabaseStatus } from "./services/database";
 
 createRequire(import.meta.url);
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -26,13 +31,22 @@ process.env.VITE_PUBLIC = VITE_DEV_SERVER_URL
   ? path.join(process.env.APP_ROOT, "public")
   : RENDERER_DIST;
 
+const runtimeConfig = createRuntimeConfig(process.env.APP_ROOT);
+
+ipcMain.handle("app-runtime:get-info", () => runtimeConfig);
+ipcMain.handle("database:get-status", () => getDatabaseStatus(runtimeConfig));
+registerAuthIpc(ipcMain, runtimeConfig);
+
 let win: BrowserWindow | null;
 
 function createWindow() {
   win = new BrowserWindow({
     icon: path.join(process.env.VITE_PUBLIC, "electron-vite.svg"),
     webPreferences: {
-      preload: path.join(__dirname, "preload.mjs"),
+      preload: path.join(__dirname, "preload.cjs"),
+      contextIsolation: true,
+      nodeIntegration: false,
+      sandbox: true,
     },
   });
 
@@ -67,4 +81,11 @@ app.on("activate", () => {
   }
 });
 
-app.whenReady().then(createWindow);
+app.whenReady().then(async () => {
+  try {
+    await ensureBootstrapAdmin(runtimeConfig);
+  } catch (error) {
+    console.error("Bootstrap admin setup failed:", error);
+  }
+  createWindow();
+});

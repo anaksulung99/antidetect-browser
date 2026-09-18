@@ -5,16 +5,22 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "typecheck": "vue-tsc --noEmit",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "drizzle-kit migrate",
+    "db:check": "drizzle-kit check",
     "build": "vue-tsc && vite build && electron-builder",
     "preview": "vite preview"
   },
   "dependencies": {
+    "@cloudamqp/amqp-client": "^4.1.1",
     "@crawlee/cheerio": "^3.18.1",
     "@crawlee/playwright": "^3.18.1",
     "@internationalized/date": "^3.12.4",
     "@lucide/vue": "^1.46.0",
     "@neondatabase/serverless": "^1.1.0",
     "@tanstack/vue-table": "^9.2.4",
+    "@upstash/redis": "^1.38.4",
     "@vee-validate/zod": "^4.15.1",
     "@vueuse/core": "^15.0.0",
     "class-variance-authority": "^0.7.1",

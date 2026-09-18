@@ -1,20 +1,25 @@
 <script lang="ts" setup>
 const router = useRouter();
-const route = useRoute();
-const { alert } = useGlobalAlert();
+const authStore = useAuthStore();
 
 const error = ref<string | null>(null);
 
 const { handleSubmit, isSubmitting } = useForm({
-  validationSchema: LoginSchema,
+  validationSchema: toTypedSchema(loginSchema),
   initialValues: {
     email: "",
-    license: "",
+    password: "",
   },
 });
 
 const onSubmit = handleSubmit(async (values) => {
-  await router.replace("/app");
+  error.value = null;
+  try {
+    await authStore.login(values.email, values.password);
+    await router.replace("/app");
+  } catch (cause) {
+    error.value = cause instanceof Error ? cause.message : "Unable to sign in.";
+  }
 });
 </script>
 
